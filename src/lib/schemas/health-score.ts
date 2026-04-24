@@ -17,3 +17,4 @@ export const healthScoreSchema = z.object({
 });
 
 // ... il resto del codice
+export type HealthScoreInput = z.infer<typeof healthScoreSchema>;
