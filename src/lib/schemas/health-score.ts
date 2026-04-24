@@ -6,13 +6,14 @@ export const healthScoreSchema = z.object({
     .min(18, "Devi avere almeno 18 anni")
     .max(99, "Inserisci un'età valida"),
   region: z.enum(['Nord', 'Centro', 'Sud', 'Isole'], { 
-// ... il resto del codice rimane uguale
-    errorMap: () => ({ message: "Seleziona un'area geografica" }) 
+    message: "Seleziona un'area geografica" 
   }),
+// ... il resto del codice
+
   monthlyNetIncome: z.coerce.number().min(0, "Il reddito non può essere negativo"),
   monthlyFixedExpenses: z.coerce.number().min(0, "Le spese non possono essere negative"),
   totalSavings: z.coerce.number().min(0, "I risparmi non possono essere negativi"),
   consumerDebt: z.coerce.number().min(0, "I debiti non possono essere negativi"),
 });
 
-export type HealthScoreInput = z.infer<typeof healthScoreSchema>;
+// ... il resto del codice
