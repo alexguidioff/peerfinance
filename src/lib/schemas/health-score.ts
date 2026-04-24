@@ -2,10 +2,11 @@
 import { z } from 'zod';
 
 export const healthScoreSchema = z.object({
-  age: z.coerce.number({ invalid_type_error: "Inserisci un'età valida" })
+  age: z.coerce.number({ message: "Inserisci un'età valida" })
     .min(18, "Devi avere almeno 18 anni")
     .max(99, "Inserisci un'età valida"),
   region: z.enum(['Nord', 'Centro', 'Sud', 'Isole'], { 
+// ... il resto del codice rimane uguale
     errorMap: () => ({ message: "Seleziona un'area geografica" }) 
   }),
   monthlyNetIncome: z.coerce.number().min(0, "Il reddito non può essere negativo"),
