@@ -1,6 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Building2, TrendingUp, Home, BarChart3, MapPin, ArrowRight, Info } from 'lucide-react';
+import { 
+  Building2, 
+  TrendingUp, 
+  Home, 
+  BarChart3, 
+  MapPin, 
+  ArrowRight, 
+  Info,
+  Map 
+} from 'lucide-react';
 import SearchImmobiliare from '@/components/SearchImmobiliare';
 
 // Città in evidenza — nomi esatti come nel DB (case-insensitive via ilike)
@@ -79,7 +88,7 @@ export default async function ImmobiliareHub() {
 
   return (
     <main className="min-h-screen bg-background pb-24">
-      {/* Gradiente hero */}
+      {/* Gradiente hero aggiornato (rimane sul blue come tema immobiliare) ma con lo stesso effetto */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/5 via-background to-background -z-10 h-[60vh]" />
 
       <div className="max-w-5xl mx-auto px-4 pt-16 space-y-20">
@@ -88,11 +97,10 @@ export default async function ImmobiliareHub() {
         <section className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-blue-200 dark:border-blue-800">
             <BarChart3 className="w-3.5 h-3.5" />
-            Dati OMI · Agenzia delle Entrate · 2025H2
+            Dati OMI · Agenzia delle Entrate · 2024
           </div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tight">
-            Investimento{' '}
-            <span className="text-blue-600">Immobiliare</span>
+            Mercato <span className="text-blue-600">Immobiliare</span>
           </h1>
           <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
             Prezzi di vendita e affitto per ogni comune italiano, direttamente
@@ -109,47 +117,68 @@ export default async function ImmobiliareHub() {
         {mediaVenditaNaz > 0 && (
           <section>
             <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-              Media nazionale (abitazioni)
+              Benchmark Nazionale (Abitazioni)
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-card border rounded-2xl p-6">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-primary" /> Prezzo Acquisto
+              <div className="bg-card border rounded-3xl p-6 hover:shadow-md transition-shadow">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-blue-500" /> Prezzo Acquisto
                 </p>
                 <p className="text-3xl font-black">{fmt(mediaVenditaNaz)}</p>
                 <p className="text-xs text-muted-foreground mt-1">/mq medio</p>
               </div>
-              <div className="bg-card border rounded-2xl p-6">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Home className="w-3.5 h-3.5 text-primary" /> Affitto
+              <div className="bg-card border rounded-3xl p-6 hover:shadow-md transition-shadow">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Home className="w-3.5 h-3.5 text-indigo-500" /> Affitto
                 </p>
                 <p className="text-3xl font-black">{fmt(mediaAffittoNaz)}</p>
                 <p className="text-xs text-muted-foreground mt-1">/mq/mese medio</p>
               </div>
-              <div className="bg-slate-900 text-white border rounded-2xl p-6 relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl" />
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Rendimento Lordo
+              <div className="bg-slate-900 text-white border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-lg hover:-translate-y-0.5 transition-transform">
+                <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
+                  <TrendingUp className="w-3.5 h-3.5 text-blue-400" /> Rendimento Lordo
                 </p>
-                <p className="text-3xl font-black text-emerald-400 relative z-10">
+                <p className="text-3xl font-black text-blue-400 relative z-10">
                   {rendimentoNaz.toFixed(2)}%
                 </p>
                 <p className="text-xs text-slate-400 mt-1 relative z-10">annuo lordo medio</p>
               </div>
             </div>
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3 pl-2">
               <Info className="w-3 h-3" />
               Rendimento lordo = (affitto mensile × 12) / prezzo acquisto. Non include spese, tasse o vacancy.
             </p>
           </section>
         )}
 
+        {/* ── Link alla Mappa ──────────────────────────────────── */}
+        <section>
+          <Link
+            href="/immobiliare/mappaimmobiliare"
+            className="group flex items-center justify-between bg-card border rounded-3xl p-6 hover:shadow-xl hover:border-blue-500/40 transition-all hover:-translate-y-0.5"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-blue-600">
+                <Map className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-black text-lg">Mappa dei Rendimenti</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Visualizza i prezzi al metro quadro e i rendimenti in tutta Italia
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-blue-600 group-hover:translate-x-1 transition-all shrink-0" />
+          </Link>
+        </section>
+
         {/* ── Città in evidenza ────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-primary" />
-              Città principali
+              <MapPin className="w-6 h-6 text-blue-600" />
+              Città Principali
             </h2>
             <p className="text-sm text-muted-foreground">
               Ordinate per rendimento ↓
@@ -163,7 +192,7 @@ export default async function ImmobiliareHub() {
                 <Link
                   href={`/immobiliare/${city.comune_slug}`}
                   key={city.comune_slug}
-                  className="group bg-card border rounded-3xl p-6 hover:shadow-xl hover:border-primary/40 transition-all hover:-translate-y-0.5"
+                  className="group bg-card border rounded-3xl p-6 hover:shadow-xl hover:border-blue-500/40 transition-all hover:-translate-y-0.5"
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-5">
@@ -171,14 +200,14 @@ export default async function ImmobiliareHub() {
                       <Home className="w-5 h-5" />
                     </div>
                     <div
-                      className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${
+                      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
                         isTopYield
                           ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                           : 'bg-secondary text-muted-foreground'
                       }`}
                     >
                       <TrendingUp className="w-3.5 h-3.5" />
-                      {city.rendimento.toFixed(1)}%
+                      {city.rendimento.toFixed(1)}% lordo
                     </div>
                   </div>
 
@@ -191,13 +220,13 @@ export default async function ImmobiliareHub() {
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
                         Acquisto
                       </p>
-                      <p className="font-bold">{fmt(city.prezzoMedio)}<span className="text-xs text-muted-foreground font-normal">/mq</span></p>
+                      <p className="font-bold text-lg text-foreground">{fmt(city.prezzoMedio)}<span className="text-xs text-muted-foreground font-normal">/mq</span></p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
                         Affitto
                       </p>
-                      <p className="font-bold">
+                      <p className="font-bold text-lg text-foreground">
                         {city.affittoMedio.toLocaleString('it-IT', { maximumFractionDigits: 1 })}
                         <span className="text-xs text-muted-foreground font-normal">€/mq</span>
                       </p>
@@ -205,7 +234,7 @@ export default async function ImmobiliareHub() {
                   </div>
 
                   {/* CTA */}
-                  <div className="flex items-center gap-1 mt-4 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 mt-4 text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                     Vedi analisi completa <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
@@ -218,7 +247,7 @@ export default async function ImmobiliareHub() {
         <section className="border-t border-border pt-8">
           <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
             I dati provengono dalle quotazioni OMI (Osservatorio del Mercato Immobiliare)
-            dell'Agenzia delle Entrate, semestre 2025H2. I rendimenti sono calcolati al lordo
+            dell'Agenzia delle Entrate, semestre 2024. I rendimenti sono calcolati al lordo
             di imposte, spese condominiali, vacancy e commissioni. Non costituiscono
             consulenza finanziaria o d'investimento.
           </p>

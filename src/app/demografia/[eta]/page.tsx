@@ -221,7 +221,7 @@ export default async function FasciaEtaPage({ params }: PageProps) {
             Vuoi vedere come cambia il potere d'acquisto man mano che si invecchia in Italia? Guarda la piramide completa.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <a href="/analisi/piramide" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl font-bold transition-all shadow-lg">
+            <a href="/demografia/piramide" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl font-bold transition-all shadow-lg">
               Vedi Piramide Età
             </a>
           </div>

@@ -1,24 +1,27 @@
-// components/score/steps/Step3Wealth.tsx
 'use client';
 
 import { useFormContext } from 'react-hook-form';
 import type { HealthScoreInput } from '@/lib/schemas/health-score';
+import { PiggyBank, CreditCard, Home } from 'lucide-react';
 
 export default function Step3Wealth() {
   const { register, formState: { errors } } = useFormContext<HealthScoreInput>();
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h2 className="text-2xl font-semibold text-slate-900 mb-2">Patrimonio</h2>
-        <p className="text-slate-500">Ultimo step. Ci serve per calcolare quanti mesi di autonomia finanziaria hai (Runway).</p>
+        <h2 className="text-3xl font-black text-foreground mb-3">Patrimonio e Casa</h2>
+        <p className="text-muted-foreground text-lg">
+          Ultimo step. Ci serve per calcolare quanti mesi di autonomia finanziaria hai (Runway) e valutare la tua solidità patrimoniale.
+        </p>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
+        
         {/* Risparmi */}
-        <div>
-          <label htmlFor="totalSavings" className="block text-sm font-medium text-slate-700 mb-1">
-            Risparmi e Investimenti liquidi (€)
+        <div className="relative">
+          <label htmlFor="totalSavings" className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+            <PiggyBank className="w-4 h-4 text-emerald-500" /> Risparmi e Investimenti liquidi (€)
           </label>
           <input
             id="totalSavings"
@@ -26,20 +29,22 @@ export default function Step3Wealth() {
             inputMode="numeric"
             placeholder="es. 15000"
             {...register('totalSavings')}
-            className={`w-full p-3 pl-4 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none transition-colors ${
-              errors.totalSavings ? 'border-red-500 bg-red-50' : 'border-slate-200'
+            className={`w-full p-4 border-2 rounded-2xl text-lg font-medium bg-card focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all ${
+              errors.totalSavings ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-emerald-500'
             }`}
           />
-          <p className="mt-1 text-xs text-slate-500">Conti correnti, conti deposito, azioni, ETF, crypto. Escludi il valore della casa.</p>
+          <p className="mt-2 text-xs font-medium text-muted-foreground">
+            Conti correnti, conti deposito, azioni, ETF, crypto. <strong className="text-foreground">Escludi</strong> il valore della casa.
+          </p>
           {errors.totalSavings && (
-            <p className="mt-1 text-sm text-red-600">{errors.totalSavings.message}</p>
+            <p className="mt-2 text-sm font-bold text-red-500">{errors.totalSavings.message}</p>
           )}
         </div>
 
         {/* Debiti */}
-        <div>
-          <label htmlFor="consumerDebt" className="block text-sm font-medium text-slate-700 mb-1">
-            Debiti al consumo (€)
+        <div className="relative">
+          <label htmlFor="consumerDebt" className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-emerald-500" /> Debiti al consumo (€)
           </label>
           <input
             id="consumerDebt"
@@ -47,15 +52,41 @@ export default function Step3Wealth() {
             inputMode="numeric"
             placeholder="es. 3500"
             {...register('consumerDebt')}
-            className={`w-full p-3 pl-4 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none transition-colors ${
-              errors.consumerDebt ? 'border-red-500 bg-red-50' : 'border-slate-200'
+            className={`w-full p-4 border-2 rounded-2xl text-lg font-medium bg-card focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all ${
+              errors.consumerDebt ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-emerald-500'
             }`}
           />
-          <p className="mt-1 text-xs text-slate-500 font-medium text-blue-600">Escludi il mutuo della casa. <span className="text-slate-500 font-normal">Inserisci solo finanziamenti auto, prestiti personali o carte revolving.</span></p>
+          <p className="mt-2 text-xs font-medium text-muted-foreground">
+            <strong className="text-foreground">Escludi il mutuo della casa.</strong> Inserisci solo finanziamenti auto, prestiti personali o carte revolving.
+          </p>
           {errors.consumerDebt && (
-            <p className="mt-1 text-sm text-red-600">{errors.consumerDebt.message}</p>
+            <p className="mt-2 text-sm font-bold text-red-500">{errors.consumerDebt.message}</p>
           )}
         </div>
+
+        {/* Situazione Abitativa */}
+        <div className="relative">
+          <label htmlFor="housingStatus" className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+            <Home className="w-4 h-4 text-emerald-500" /> Situazione Abitativa
+          </label>
+          <select
+            id="housingStatus"
+            {...register('housingStatus')}
+            className={`w-full p-4 border-2 rounded-2xl text-lg font-medium bg-card focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all appearance-none cursor-pointer ${
+              errors.housingStatus ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-emerald-500'
+            }`}
+          >
+            <option value="">Seleziona...</option>
+            <option value="Affitto">In Affitto</option>
+            <option value="Proprietà con Mutuo">Proprietà (con Mutuo in corso)</option>
+            <option value="Proprietà senza Mutuo">Proprietà (senza Mutuo)</option>
+            <option value="Vivo con i genitori">Vivo con i genitori / in famiglia</option>
+          </select>
+          {errors.housingStatus && (
+            <p className="mt-2 text-sm font-bold text-red-500">{errors.housingStatus.message}</p>
+          )}
+        </div>
+
       </div>
     </div>
   );

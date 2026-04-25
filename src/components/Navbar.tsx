@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Menu, X, TrendingUp, MapPin } from "lucide-react";
+import { Search, Menu, X, TrendingUp, MapPin, Loader2 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
 // Inizializza Supabase client-side
@@ -12,10 +12,18 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 );
 
-// Tipo per i risultati della ricerca
 type Suggestion = {
   comune: string;
   sigla_provincia: string;
+};
+
+// Helper per capitalizzare correttamente i nomi composti (es. "reggio emilia" -> "Reggio Emilia")
+const formatComuneName = (name: string) => {
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 };
 
 export default function Navbar() {
@@ -26,13 +34,10 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Ref per chiudere il dropdown se si clicca fuori
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Effetto per il Debouncing e la chiamata API a Supabase
   useEffect(() => {
     const fetchSuggestions = async () => {
-      // Se l'input è vuoto o troppo corto, chiudi il dropdown
       if (searchQuery.trim().length < 2) {
         setSuggestions([]);
         setShowDropdown(false);
@@ -42,29 +47,31 @@ export default function Navbar() {
       setIsLoading(true);
       setShowDropdown(true);
 
-      // Cerca su Supabase usando "ilike" (case insensitive)
+      // Ricerca ovunque nella stringa
       const { data, error } = await supabase
         .from("mef_redditi_comuni")
         .select("comune, sigla_provincia")
-        .ilike("comune", `${searchQuery}%`) // Cerca i comuni che INIZIANO con l'input
-        .limit(5); // Mostra solo i primi 5 risultati
+        .ilike("comune", `%${searchQuery}%`)
+        .limit(5);
 
       if (!error && data) {
-        setSuggestions(data);
+        // Formattiamo il nome del comune prima di salvarlo nello stato
+        const formattedData = data.map(item => ({
+          ...item,
+          comune: formatComuneName(item.comune)
+        }));
+        setSuggestions(formattedData);
       }
       setIsLoading(false);
     };
 
-    // DEBOUNCER: Aspetta 300ms prima di fare la chiamata
     const timeoutId = setTimeout(() => {
       fetchSuggestions();
     }, 300);
 
-    // Cleanup se l'utente continua a digitare prima dei 300ms
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Gestione clic fuori dalla barra di ricerca per chiudere il dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -75,16 +82,15 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Gestione della selezione di un comune dal dropdown
   const handleSelectComune = (comuneSelezionato: string) => {
+    // Per l'URL usiamo il formato originale atteso dal sistema (minuscolo)
     const formattedQuery = encodeURIComponent(comuneSelezionato.toLowerCase());
     setSearchQuery("");
     setShowDropdown(false);
     setIsMobileMenuOpen(false);
-    router.push(`/stipendio/${formattedQuery}`);
+    router.push(`/redditi/${formattedQuery}`);
   };
 
-  // Se l'utente preme invio invece di cliccare, prendiamo il primo risultato
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (suggestions.length > 0) {
@@ -109,17 +115,15 @@ export default function Navbar() {
         {/* MENU E SEARCH (DESKTOP) */}
         <div className="hidden md:flex md:items-center md:gap-8">
           <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
-    {/* I tuoi nuovi link */}
-    <Link href="/redditi" className="transition-colors hover:text-foreground">Redditi</Link>
-    <Link href="/immobiliare" className="transition-colors hover:text-foreground">Immobiliare</Link>
-    <Link href="/demografia" className="transition-colors hover:text-foreground">Demografia</Link>
-    <Link href="/score" className="transition-colors hover:text-foreground">Health Score</Link>
-  </div>
-
+            <Link href="/redditi" className="transition-colors hover:text-foreground">Redditi</Link>
+            <Link href="/immobiliare" className="transition-colors hover:text-foreground">Immobiliare</Link>
+            <Link href="/demografia" className="transition-colors hover:text-foreground">Demografia</Link>
+            <Link href="/score" className="transition-colors hover:text-foreground">Health Score</Link>
+          </div>
 
           {/* SEARCHBAR CON AUTOCOMPLETE */}
           <div className="relative" ref={searchRef}>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
@@ -127,17 +131,18 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => { if (searchQuery.length >= 2) setShowDropdown(true); }}
-                className="h-10 w-64 rounded-full border border-border bg-secondary/50 py-2 pl-10 pr-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:ring-1 focus:ring-primary"
+                className="h-10 w-64 rounded-full border border-border bg-secondary/50 py-2 pl-10 pr-10 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:ring-1 focus:ring-primary"
                 autoComplete="off"
               />
+              {isLoading && (
+                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary animate-spin" />
+              )}
             </form>
 
             {/* DROPDOWN RISULTATI DESKTOP */}
             {showDropdown && (
               <div className="absolute top-full mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
-                {isLoading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">Ricerca in corso...</div>
-                ) : suggestions.length > 0 ? (
+                {suggestions.length > 0 ? (
                   <ul className="py-1">
                     {suggestions.map((sugg) => (
                       <li key={sugg.comune}>
@@ -146,15 +151,15 @@ export default function Navbar() {
                           className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-secondary"
                         >
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="capitalize font-medium text-foreground">{sugg.comune}</span>
-                          <span className="ml-auto text-xs text-muted-foreground uppercase">{sugg.sigla_provincia}</span>
+                          <span className="font-medium text-foreground">{sugg.comune}</span>
+                          <span className="ml-auto text-xs text-muted-foreground uppercase bg-secondary px-1.5 py-0.5 rounded-md">{sugg.sigla_provincia}</span>
                         </button>
                       </li>
                     ))}
                   </ul>
-                ) : (
+                ) : !isLoading ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">Nessun comune trovato</div>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -173,24 +178,25 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="border-t border-border bg-background px-6 py-4 md:hidden">
           <div className="relative mb-4">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cerca comune (es. Milano)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-12 w-full rounded-xl border border-border bg-secondary/50 py-2 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary focus:bg-background"
+                className="h-12 w-full rounded-xl border border-border bg-secondary/50 py-2 pl-10 pr-10 text-sm text-foreground outline-none focus:border-primary focus:bg-background"
                 autoComplete="off"
               />
+              {isLoading && (
+                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary animate-spin" />
+              )}
             </form>
             
             {/* DROPDOWN RISULTATI MOBILE (INLINE) */}
             {searchQuery.length >= 2 && (
               <div className="mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-sm">
-                {isLoading ? (
-                  <div className="p-3 text-center text-sm text-muted-foreground">Ricerca...</div>
-                ) : suggestions.length > 0 ? (
+                {suggestions.length > 0 ? (
                   <ul className="py-1">
                     {suggestions.map((sugg) => (
                       <li key={sugg.comune}>
@@ -199,20 +205,23 @@ export default function Navbar() {
                           className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm hover:bg-secondary border-b border-border last:border-0"
                         >
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="capitalize font-medium text-foreground">{sugg.comune}</span>
-                          <span className="ml-auto text-xs text-muted-foreground uppercase">{sugg.sigla_provincia}</span>
+                          <span className="font-medium text-foreground">{sugg.comune}</span>
+                          <span className="ml-auto text-xs text-muted-foreground uppercase bg-secondary px-1.5 py-0.5 rounded-md">{sugg.sigla_provincia}</span>
                         </button>
                       </li>
                     ))}
                   </ul>
-                ) : (
+                ) : !isLoading ? (
                   <div className="p-3 text-center text-sm text-muted-foreground">Nessun comune trovato</div>
-                )}
+                ) : null}
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-4 text-base font-medium text-muted-foreground border-t border-border pt-4">
+            <Link href="/redditi" onClick={() => setIsMobileMenuOpen(false)}>Redditi</Link>
+            <Link href="/immobiliare" onClick={() => setIsMobileMenuOpen(false)}>Immobiliare</Link>
+            <Link href="/demografia" onClick={() => setIsMobileMenuOpen(false)}>Demografia</Link>
             <Link href="/score" onClick={() => setIsMobileMenuOpen(false)}>Health Score</Link>
           </div>
         </div>
