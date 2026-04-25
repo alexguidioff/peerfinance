@@ -2,7 +2,7 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
-const BASE_URL = 'https://peerfinance.vercel.app/'; // ← cambia con il tuo dominio
+const BASE_URL = 'https://peerfinance.vercel.app'; // ← cambia con il tuo dominio
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
