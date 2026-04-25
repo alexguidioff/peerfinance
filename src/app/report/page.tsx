@@ -6,13 +6,12 @@ import { createClient } from '@supabase/supabase-js';
 import { ShieldCheck, TrendingUp, Wallet, ArrowRight, Home, CreditCard } from 'lucide-react';
 
 function getShiwAgeCategory(age: number): string {
-  if (age <= 34) return '15-24';   // ← fix: SHIW usa "34 and under", non 24
+  if (age <= 34) return '15-24';
   if (age <= 44) return '25-44';
   if (age <= 64) return '45-64';
   return 'oltre 64';
 }
 
-// Mapping jobCategory → categoria SHIW nel DB
 function getShiwJobCategory(jobCategory: string): string {
   const map: Record<string, string> = {
     'Dipendente':  'Dipendente',
@@ -50,33 +49,26 @@ export default async function ReportPage({
   const ageCategory = getShiwAgeCategory(inputData.age);
   const jobCategory = getShiwJobCategory(inputData.jobCategory);
 
-  // Query MEF + SHIW in parallelo
   const [mefResponse, shiwAgeResponse, shiwJobResponse] = await Promise.all([
     supabase
       .from('mef_redditi_comuni')
       .select('reddito_medio_euro')
-      .ilike('comune', inputData.comune)
+      .ilike('comune', `%${inputData.comune}%`)
       .limit(1)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('shiw_benchmarks')
       .select('*')
-      .eq('categoria', ageCategory)
-      .eq('tipo_categoria', 'eta')   // ← filtro aggiunto per evitare ambiguità
-      .single(),
+      .ilike('categoria', ageCategory)
+      .ilike('tipo_categoria', 'eta')
+      .maybeSingle(),
     supabase
       .from('shiw_benchmarks')
       .select('*')
-      .eq('categoria', jobCategory)
-      .eq('tipo_categoria', 'lavoro') // ← filtro aggiunto
-      .single(),
+      .ilike('categoria', jobCategory)
+      .ilike('tipo_categoria', 'lavoro')
+      .maybeSingle(),
   ]);
-
-  // Log in dev per debug
-  if (process.env.NODE_ENV === 'development') {
-    console.log('ageCategory:', ageCategory, shiwAgeResponse.error);
-    console.log('jobCategory:', jobCategory, shiwJobResponse.error);
-  }
 
   const localLordoAnnuo = mefResponse.data?.reddito_medio_euro || 25000;
   const localNetIncomeMonthly = (localLordoAnnuo * 0.70) / 12;
@@ -107,18 +99,26 @@ export default async function ReportPage({
 
   const ui = getScoreUI(result.score);
 
-  // Dati di supporto per le card
-  const avgLiquidita = (
-    (benchmarkStats.ageData.attivita_finanziarie + benchmarkStats.jobData.attivita_finanziarie) / 2
-  );
-  const avgDebito = (
-    (benchmarkStats.ageData.debito_medio + benchmarkStats.jobData.debito_medio) / 2
-  );
-  // perc_affitto per età è più significativa di quella per lavoro
+  const avgLiquidita = (benchmarkStats.ageData.attivita_finanziarie + benchmarkStats.jobData.attivita_finanziarie) / 2;
+  const avgTotalDebt = (benchmarkStats.ageData.debito_medio + benchmarkStats.jobData.debito_medio) / 2;
+  const avgConsumerDebt = avgTotalDebt * 0.15;
   const percAffittoEta = benchmarkStats.ageData.perc_affitto;
   const percProprietaEta = benchmarkStats.ageData.perc_proprieta;
 
   const fmt = (n: number) => '€' + Math.round(n).toLocaleString('it-IT');
+
+  const isDebtCritical = inputData.consumerDebt > avgConsumerDebt;
+  const debtUI = isDebtCritical ? {
+    bg: 'bg-red-50 dark:bg-red-900/10',
+    border: 'border-red-200 dark:border-red-900/30',
+    textMain: 'text-red-700 dark:text-red-400',
+    textSub: 'text-red-600/70 dark:text-red-400/70',
+  } : {
+    bg: 'bg-amber-50 dark:bg-amber-900/10',
+    border: 'border-amber-200 dark:border-amber-900/30',
+    textMain: 'text-amber-700 dark:text-amber-500',
+    textSub: 'text-amber-700/70 dark:text-amber-500/70',
+  };
 
   return (
     <main className="min-h-screen bg-background py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -142,8 +142,11 @@ export default async function ReportPage({
             Stato: {ui.label}
           </div>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
-            Analisi basata su età, categoria lavorativa e media dei contribuenti di{' '}
-            <span className="font-bold capitalize">{inputData.comune}</span>.
+            Analisi basata sul tuo identikit:{' '}
+            <span className="font-bold text-foreground">{inputData.age} anni</span>,{' '}
+            <span className="font-bold text-foreground">{inputData.jobCategory.toLowerCase()}</span>,{' '}
+            residente a{' '}
+            <span className="font-bold text-foreground capitalize">{inputData.comune}</span>.
           </p>
         </div>
 
@@ -165,7 +168,6 @@ export default async function ReportPage({
                 <p className="text-sm text-muted-foreground mt-1">Media ISTAT</p>
               </div>
             </div>
-            {/* Barra visiva */}
             <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
               <div
                 className="bg-emerald-500 h-full rounded-full transition-all"
@@ -193,7 +195,7 @@ export default async function ReportPage({
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              * Media attività finanziarie per età e categoria · Fonte Banca d'Italia SHIW 2022
+              * Media attività finanziarie per età e categoria · Fonte Banca d'Italia SHIW
             </p>
           </div>
 
@@ -225,7 +227,7 @@ export default async function ReportPage({
             </div>
           </div>
 
-          {/* Situazione Abitativa — fix del 0.0% */}
+          {/* Situazione Abitativa */}
           <div className="bg-card p-8 rounded-[2rem] shadow-sm border border-border hover:-translate-y-1 transition-transform">
             <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
               <Home className="w-4 h-4 text-purple-500" /> Situazione Abitativa
@@ -253,36 +255,34 @@ export default async function ReportPage({
                 </span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">Fonte Banca d'Italia SHIW 2022</p>
+            <p className="text-xs text-muted-foreground mt-3">Fonte Banca d'Italia SHIW</p>
           </div>
         </div>
 
         {/* ── Debito ───────────────────────────────────────────────── */}
         {inputData.consumerDebt > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 p-8 rounded-[2rem]">
-            <h3 className="text-red-700 dark:text-red-400 text-xs font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
+          <div className={`${debtUI.bg} border ${debtUI.border} p-8 rounded-[2rem]`}>
+            <h3 className={`${debtUI.textMain} text-xs font-bold uppercase tracking-widest mb-6 flex items-center gap-2`}>
               <CreditCard className="w-4 h-4" /> Debito al Consumo
             </h3>
-            <div className="flex justify-between items-end border-b border-red-200 dark:border-red-900/30 pb-6 mb-4">
+            <div className={`flex justify-between items-end border-b ${debtUI.border} pb-6 mb-4`}>
               <div>
-                <p className="text-4xl font-black text-red-700 dark:text-red-400">
+                <p className={`text-4xl font-black ${debtUI.textMain}`}>
                   {fmt(inputData.consumerDebt)}
                 </p>
-                <p className="text-sm text-red-600/70 dark:text-red-400/70 mt-1">Il tuo debito</p>
+                <p className={`text-sm mt-1 ${debtUI.textSub}`}>Il tuo debito</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-red-600/70 dark:text-red-400/70">
-                  {fmt(avgDebito)}
+                <p className={`text-2xl font-bold ${debtUI.textSub}`}>
+                  {fmt(avgConsumerDebt)}
                 </p>
-                <p className="text-sm text-red-600/70 dark:text-red-400/70 mt-1">
-                  Media tuoi pari*
-                </p>
+                <p className={`text-sm mt-1 ${debtUI.textSub}`}>Stima media tuoi pari*</p>
               </div>
             </div>
-            <p className="text-xs text-red-600/70 dark:text-red-400/70">
-              * Il dato SHIW include mutui e prestiti. Il debito al consumo puro (carte revolving,
-              prestiti personali) è in media circa il 15-20% del totale. Estingui prima i debiti
-              con tasso più alto.
+            <p className={`text-xs ${debtUI.textSub}`}>
+              * Stima basata sul 15% dell'indebitamento totale medio per la tua fascia d'età e professione
+              (Fonte Banca d'Italia). Estingui sempre prima i prestiti personali e le carte revolving,
+              poiché hanno i tassi di interesse più elevati.
             </p>
           </div>
         )}
@@ -311,16 +311,22 @@ export default async function ReportPage({
         </div>
 
         {/* ── CTA ──────────────────────────────────────────────────── */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-10 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white p-10 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <h3 className="text-3xl font-black mb-4 relative z-10">Migliora il tuo Score</h3>
-          <p className="text-blue-100 mb-8 max-w-xl mx-auto font-medium text-lg relative z-10">
-            Vuoi ricevere il report completo in PDF con le strategie per ottimizzare le tue
-            finanze e i prodotti raccomandati?
+          <h3 className="text-3xl font-black mb-4 relative z-10">
+            Vuoi migliorare il tuo Score?
+          </h3>
+          <p className="text-emerald-50 mb-8 max-w-2xl mx-auto font-medium text-lg relative z-10">
+            Completa il tuo profilo in 3 minuti e richiedi una{' '}
+            <strong>Sessione Strategica Gratuita (valore €150)</strong> con un consulente
+            finanziario o career coach verificato della nostra rete.
           </p>
-          <button className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-10 rounded-2xl transition-all transform hover:-translate-y-1 shadow-lg relative z-10 flex items-center justify-center gap-2 mx-auto">
-            Richiedi Report <ArrowRight className="w-5 h-5" />
-          </button>
+          <a
+            href={`/strategy?d=${payload}`}
+            className="inline-flex items-center justify-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 font-bold py-4 px-10 rounded-2xl transition-all transform hover:-translate-y-1 shadow-lg relative z-10 mx-auto"
+          >
+            Richiedi la Sessione Gratuita <ArrowRight className="w-5 h-5" />
+          </a>
         </div>
 
       </div>

@@ -121,11 +121,27 @@ export function calculateHealthScore(input: HealthScoreInput, benchmark: Benchma
 
   // Insight Extra: Debito
   if (input.consumerDebt > 0) {
-    const avgDebt = benchmark.ageData.debito_medio; // Debito medio della sua età
+    // Stima Banca d'Italia: il credito al consumo pesa circa il 15% dei debiti totali
+    const avgTotalDebt = (benchmark.ageData.debito_medio + benchmark.jobData.debito_medio) / 2;
+    const stimaDebitoConsumoPari = avgTotalDebt * 0.15; 
+
+    let debtText = `Hai €${input.consumerDebt.toLocaleString('it-IT')} di debito al consumo. `;
+    let insightStatus = "danger"; // Default: rosso
+
+    if (input.consumerDebt > stimaDebitoConsumoPari) {
+      debtText += `È un valore superiore alla stima dei tuoi pari (€${stimaDebitoConsumoPari.toLocaleString('it-IT', {maximumFractionDigits: 0})}). `;
+      insightStatus = "danger";
+    } else {
+      debtText += `Anche se è inferiore alla stima media dei tuoi pari (€${stimaDebitoConsumoPari.toLocaleString('it-IT', {maximumFractionDigits: 0})}), non abbassare la guardia. `;
+      insightStatus = "warning"; // Diventa arancione se è sotto la media!
+    }
+
+    debtText += `I prestiti personali e le carte revolving hanno tassi d'interesse altissimi. La priorità assoluta è azzerare questo debito prima di investire.`;
+
     insights.push({
-      title: "Allarme Debito Cattivo",
-      text: `Hai €${input.consumerDebt.toLocaleString('it-IT')} di debito al consumo. La media per la tua età è €${avgDebt.toLocaleString('it-IT')} (ma questo include i mutui!). Estingui prestiti e carte revolving il prima possibile.`,
-      status: "danger"
+      title: insightStatus === "danger" ? "Allarme Debito Cattivo" : "Attenzione al Debito",
+      text: debtText,
+      status: insightStatus
     });
   }
 
