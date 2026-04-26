@@ -155,7 +155,7 @@ export default function PiramideClient({ initialData }: PiramideClientProps) {
               const slug = d.eta.replace(/\s*-\s*/g, '-').replace(/\s+/g, '-').toLowerCase();
 
               return (
-                <Link href={`/analisi/fascia-eta/${slug}`} key={d.eta} className="block group">
+                <Link href={`/demografia/${slug}`} key={d.eta} className="block group">
                   <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] gap-2 md:gap-4 items-center">
                     
                     {/* SINISTRA: Popolazione */}
