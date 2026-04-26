@@ -1,7 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [
+      {
+        source: "/sitemap.xml",
+        headers: [
+          {
+            key: "Content-Encoding",
+            value: "identity",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
