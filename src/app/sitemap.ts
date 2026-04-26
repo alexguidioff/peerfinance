@@ -1,4 +1,7 @@
 // app/sitemap.ts
+// app/sitemap.ts
+export const revalidate = 86400; // cache 24h
+
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
