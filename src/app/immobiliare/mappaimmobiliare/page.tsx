@@ -24,6 +24,55 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Mapping sigla → nome provincia
+const PROVINCE_NAMES: Record<string, string> = {
+  AG:"Agrigento",AL:"Alessandria",AN:"Ancona",AO:"Aosta",AP:"Ascoli Piceno",
+  AQ:"L'Aquila",AR:"Arezzo",AT:"Asti",AV:"Avellino",BA:"Bari",BG:"Bergamo",
+  BI:"Biella",BL:"Belluno",BN:"Benevento",BO:"Bologna",BR:"Brindisi",BS:"Brescia",
+  BT:"Barletta-Andria-Trani",BZ:"Bolzano",CA:"Cagliari",CB:"Campobasso",
+  CE:"Caserta",CH:"Chieti",CL:"Caltanissetta",CN:"Cuneo",CO:"Como",CR:"Cremona",
+  CS:"Cosenza",CT:"Catania",CZ:"Catanzaro",EN:"Enna",FC:"Forlì-Cesena",
+  FE:"Ferrara",FG:"Foggia",FI:"Firenze",FM:"Fermo",FR:"Frosinone",GE:"Genova",
+  GO:"Gorizia",GR:"Grosseto",IM:"Imperia",IS:"Isernia",KR:"Crotone",LC:"Lecco",
+  LE:"Lecce",LI:"Livorno",LO:"Lodi",LT:"Latina",LU:"Lucca",MB:"Monza e Brianza",
+  MC:"Macerata",ME:"Messina",MI:"Milano",MN:"Mantova",MO:"Modena",MS:"Massa-Carrara",
+  MT:"Matera",NA:"Napoli",NO:"Novara",NU:"Nuoro",OR:"Oristano",PA:"Palermo",
+  PC:"Piacenza",PD:"Padova",PE:"Pescara",PG:"Perugia",PI:"Pisa",PN:"Pordenone",
+  PO:"Prato",PR:"Parma",PT:"Pistoia",PU:"Pesaro e Urbino",PV:"Pavia",PZ:"Potenza",
+  RA:"Ravenna",RC:"Reggio Calabria",RE:"Reggio Emilia",RG:"Ragusa",RI:"Rieti",
+  RM:"Roma",RN:"Rimini",RO:"Rovigo",SA:"Salerno",SI:"Siena",SO:"Sondrio",
+  SP:"La Spezia",SR:"Siracusa",SS:"Sassari",SU:"Sud Sardegna",SV:"Savona",
+  TA:"Taranto",TE:"Teramo",TN:"Trento",TO:"Torino",TP:"Trapani",TR:"Terni",
+  TS:"Trieste",TV:"Treviso",UD:"Udine",VA:"Varese",VB:"Verbano-Cusio-Ossola",
+  VC:"Vercelli",VE:"Venezia",VI:"Vicenza",VR:"Verona",VT:"Viterbo",VV:"Vibo Valentia",
+};
+
+// Mapping sigla → regione (Risolve il problema della ricerca mancante)
+const PROVINCE_TO_REGION: Record<string, string> = {
+  AG: "Sicilia", AL: "Piemonte", AN: "Marche", AO: "Valle d'Aosta", AP: "Marche",
+  AQ: "Abruzzo", AR: "Toscana", AT: "Piemonte", AV: "Campania", BA: "Puglia",
+  BG: "Lombardia", BI: "Piemonte", BL: "Veneto", BN: "Campania", BO: "Emilia-Romagna",
+  BR: "Puglia", BS: "Lombardia", BT: "Puglia", BZ: "Trentino-Alto Adige", CA: "Sardegna",
+  CB: "Molise", CE: "Campania", CH: "Abruzzo", CL: "Sicilia", CN: "Piemonte",
+  CO: "Lombardia", CR: "Lombardia", CS: "Calabria", CT: "Sicilia", CZ: "Calabria",
+  EN: "Sicilia", FC: "Emilia-Romagna", FE: "Emilia-Romagna", FG: "Puglia", FI: "Toscana",
+  FM: "Marche", FR: "Lazio", GE: "Liguria", GO: "Friuli-Venezia Giulia", GR: "Toscana",
+  IM: "Liguria", IS: "Molise", KR: "Calabria", LC: "Lombardia", LE: "Puglia",
+  LI: "Toscana", LO: "Lombardia", LT: "Lazio", LU: "Toscana", MB: "Lombardia",
+  MC: "Marche", ME: "Sicilia", MI: "Lombardia", MN: "Lombardia", MO: "Emilia-Romagna",
+  MS: "Toscana", MT: "Basilicata", NA: "Campania", NO: "Piemonte", NU: "Sardegna",
+  OR: "Sardegna", PA: "Sicilia", PC: "Emilia-Romagna", PD: "Veneto", PE: "Abruzzo",
+  PG: "Umbria", PI: "Toscana", PN: "Friuli-Venezia Giulia", PO: "Toscana", PR: "Emilia-Romagna",
+  PT: "Toscana", PU: "Marche", PV: "Lombardia", PZ: "Basilicata", RA: "Emilia-Romagna",
+  RC: "Calabria", RE: "Emilia-Romagna", RG: "Sicilia", RI: "Lazio", RM: "Lazio",
+  RN: "Emilia-Romagna", RO: "Veneto", SA: "Campania", SI: "Toscana", SO: "Lombardia",
+  SP: "Liguria", SR: "Sicilia", SS: "Sardegna", SU: "Sardegna", SV: "Liguria",
+  TA: "Puglia", TE: "Abruzzo", TN: "Trentino-Alto Adige", TO: "Piemonte", TP: "Sicilia",
+  TR: "Umbria", TS: "Friuli-Venezia Giulia", TV: "Veneto", UD: "Friuli-Venezia Giulia",
+  VA: "Lombardia", VB: "Piemonte", VC: "Piemonte", VE: "Veneto", VI: "Veneto",
+  VR: "Veneto", VT: "Lazio", VV: "Calabria",
+};
+
 const METRICS = [
   {
     id: "vendita",
@@ -55,11 +104,16 @@ type ProvinceRow = {
   vendita: number;
   affitto: number;
   rendimento: number;
+  regione?: string;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function normalizeCode(s: string) {
   return (s || "").trim().toUpperCase();
+}
+
+function getRegion(sigla: string, fallback?: string) {
+  return (fallback || PROVINCE_TO_REGION[normalizeCode(sigla)] || "");
 }
 
 function fmt(n: number, unit: string) {
@@ -88,6 +142,8 @@ function BottomSheet({
   onClose: () => void;
 }) {
   if (!province) return null;
+  const regionName = getRegion(province.sigla_provincia, province.regione);
+  
   return (
     <>
       <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={onClose} />
@@ -95,7 +151,13 @@ function BottomSheet({
         <div className="bg-card border-t border-border rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
           <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4" />
           <div className="flex items-start justify-between mb-4">
-            <p className="text-3xl font-black">{province.sigla_provincia}</p>
+            <div>
+              {regionName && (
+                <p className="text-xs font-bold text-primary uppercase tracking-widest">{regionName}</p>
+              )}
+              <p className="text-3xl font-black mt-1">{province.sigla_provincia}</p>
+              <p className="text-sm text-muted-foreground">{PROVINCE_NAMES[normalizeCode(province.sigla_provincia)] || ""}</p>
+            </div>
             <button
               onClick={onClose}
               className="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
@@ -139,31 +201,28 @@ export default function MappaImmobiliare() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  // Fetch e aggregazione per provincia lato client
-    // Fetch aggregato lato server (grazie alla Vista Supabase)
-    useEffect(() => {
-      const load = async () => {
-        setIsLoading(true);
-        setError(null);
-  
-        // Chiamiamo direttamente la vista, che restituisce già i dati perfetti!
-        const { data: rows, error: dbErr } = await supabase
-          .from("omi_statistiche_province")
-          .select("*");
-  
-        if (dbErr || !rows) {
-          console.error("Errore DB:", dbErr);
-          setError("Impossibile caricare i dati. Riprova più tardi.");
-          setIsLoading(false);
-          return;
-        }
-  
-        setData(rows as ProvinceRow[]);
+  // Fetch aggregato lato server
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const { data: rows, error: dbErr } = await supabase
+        .from("omi_statistiche_province")
+        .select("*");
+
+      if (dbErr || !rows) {
+        console.error("Errore DB:", dbErr);
+        setError("Impossibile caricare i dati. Riprova più tardi.");
         setIsLoading(false);
-      };
-      load();
-    }, []);
-  
+        return;
+      }
+
+      setData(rows as ProvinceRow[]);
+      setIsLoading(false);
+    };
+    load();
+  }, []);
 
   const metric = METRICS.find((m) => m.id === selectedMetric)!;
 
@@ -186,13 +245,19 @@ export default function MappaImmobiliare() {
     [data, selectedMetric]
   );
 
-  const searchResult = useMemo(() => {
+  // LOGICA DI RICERCA CORRETTA (Sfrutta il fallback frontend per la regione)
+  const searchResults = useMemo(() => {
     const q = searchQuery.trim().toUpperCase();
-    if (!q) return null;
-    return data.find((d) => normalizeCode(d.sigla_provincia).includes(q)) ?? null;
+    if (!q) return [];
+    return data.filter((d) => {
+      const sigla = normalizeCode(d.sigla_provincia);
+      const nomeProvincia = (PROVINCE_NAMES[sigla] || "").toUpperCase();
+      const regione = getRegion(sigla, d.regione).toUpperCase();
+      return sigla.includes(q) || nomeProvincia.includes(q) || regione.includes(q);
+    });
   }, [data, searchQuery]);
 
-  const activeProvince = hoveredProvince ?? pinnedProvince ?? searchResult;
+  const activeProvince = hoveredProvince ?? pinnedProvince ?? searchResults[0] ?? null;
 
   const handleGeoEnter = useCallback((p: ProvinceRow | undefined) => {
     if (p) setHoveredProvince(p);
@@ -233,13 +298,13 @@ export default function MappaImmobiliare() {
             </p>
           </div>
 
-          {/* Ricerca */}
+          {/* Ricerca POTENZIATA */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               ref={searchRef}
               type="text"
-              placeholder="Cerca sigla provincia (es. MI)..."
+              placeholder="Sigla, provincia o regione (es. MI, Lombardia)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-2xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -249,10 +314,15 @@ export default function MappaImmobiliare() {
                 <X className="w-4 h-4" />
               </button>
             )}
+            {searchQuery && searchResults.length > 0 && (
+              <p className="absolute -bottom-5 left-1 text-[10px] text-muted-foreground">
+                {searchResults.length} provincia{searchResults.length !== 1 ? "e" : ""} trovata{searchResults.length !== 1 ? "" : ""}
+              </p>
+            )}
           </div>
 
           {/* Selezione metrica */}
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2">
             <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Metrica</label>
             <div className="grid gap-2">
               {METRICS.map((m) => (
@@ -276,7 +346,7 @@ export default function MappaImmobiliare() {
           </div>
 
           {/* Card dettaglio — solo desktop */}
-          <div className="hidden lg:flex bg-card border border-border rounded-3xl p-5 shadow-sm min-h-[220px] flex-col justify-center">
+          <div className="hidden lg:flex bg-card border border-border rounded-3xl p-5 shadow-sm min-h-[260px] flex-col justify-center transition-all">
             {isLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-3 w-20" />
@@ -289,7 +359,20 @@ export default function MappaImmobiliare() {
             ) : activeProvince ? (
               <>
                 <div className="flex items-start justify-between">
-                  <p className="text-3xl font-black">{activeProvince.sigla_provincia}</p>
+                  <div>
+                    {/* Mostro la Regione nella card desktop */}
+                    {getRegion(activeProvince.sigla_provincia, activeProvince.regione) && (
+                      <p className="text-xs font-bold text-primary uppercase tracking-widest">
+                        {getRegion(activeProvince.sigla_provincia, activeProvince.regione)}
+                      </p>
+                    )}
+                    <p className="text-3xl font-black mt-1">{activeProvince.sigla_provincia}</p>
+                    <p className="text-sm text-muted-foreground">{PROVINCE_NAMES[normalizeCode(activeProvince.sigla_provincia)] || ""}</p>
+                    
+                    {searchResults.length > 1 && !hoveredProvince && !pinnedProvince && (
+                      <p className="text-xs text-muted-foreground mt-1">{searchResults.length} province in evidenza</p>
+                    )}
+                  </div>
                   {pinnedProvince?.sigla_provincia === activeProvince.sigla_provincia && (
                     <button onClick={() => setPinnedProvince(null)} className="p-1.5 rounded-full hover:bg-secondary transition-colors">
                       <X className="w-4 h-4 text-muted-foreground" />
@@ -346,7 +429,10 @@ export default function MappaImmobiliare() {
                       >
                         <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{i + 1}</span>
                         <span className="font-bold w-8 shrink-0">{d.sigla_provincia}</span>
-                        <span className="text-muted-foreground truncate flex-1 text-xs" />
+                        {/* Mostro la Regione nel ranking */}
+                        <span className="text-muted-foreground truncate flex-1 text-xs">
+                          {getRegion(d.sigla_provincia, d.regione)}
+                        </span>
                         <span className="font-semibold shrink-0">{fmtShort(d[selectedMetric], selectedMetric)}</span>
                       </button>
                     ))}
@@ -358,7 +444,6 @@ export default function MappaImmobiliare() {
         {/* ── Colonna Destra: Mappa ────────────────────────────────── */}
         <div className="order-1 lg:order-2 lg:col-span-2 bg-card border border-border rounded-[2rem] shadow-sm relative overflow-hidden flex items-center justify-center p-2 min-h-[320px] lg:min-h-[500px]">
 
-          {/* Legenda dinamica */}
           <div className="absolute top-4 right-4 flex flex-col gap-1 items-end z-10">
             <p className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">{metric.label}</p>
             <div className="flex h-2 w-28 rounded-full overflow-hidden">
@@ -374,7 +459,6 @@ export default function MappaImmobiliare() {
             )}
           </div>
 
-          {/* Spinner loading */}
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-card/80 rounded-[2rem]">
               <div className="flex flex-col items-center gap-3 text-muted-foreground text-sm">
@@ -384,7 +468,6 @@ export default function MappaImmobiliare() {
             </div>
           )}
 
-          {/* Error state */}
           {!isLoading && error && (
             <div className="text-center text-muted-foreground text-sm p-8">
               <p className="text-2xl mb-2">⚠️</p>
@@ -404,7 +487,7 @@ export default function MappaImmobiliare() {
                     const siglaGeo = normalizeCode(geo.properties.prov_acr);
                     const prov = data.find((d) => normalizeCode(d.sigla_provincia) === siglaGeo);
                     const isActive = activeProvince && normalizeCode(activeProvince.sigla_provincia) === siglaGeo;
-                    const isSearch = searchResult && normalizeCode(searchResult.sigla_provincia) === siglaGeo;
+                    const isSearch = searchResults.some((r) => normalizeCode(r.sigla_provincia) === siglaGeo);
                     const fill = prov ? colorScale(prov[selectedMetric]) : "#e2e8f0";
 
                     return (

@@ -3,15 +3,17 @@
 import { useFormContext } from 'react-hook-form';
 import type { LeadFormInput } from '@/lib/schemas/lead-schema';
 import type { HealthScoreInput } from '@/lib/schemas/health-score';
-import { User, Briefcase, Target, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { User, Briefcase, Target, ShieldCheck, CheckCircle2, Wallet, TrendingUp } from 'lucide-react';
 
 const fmt = (n: number) => '€' + Math.round(n).toLocaleString('it-IT');
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) {
   if (!value && value !== 0) return null;
   return (
     <div className="flex justify-between items-start py-2 border-b border-border last:border-0 gap-4">
-      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
+      <span className="text-sm text-muted-foreground shrink-0 flex items-center gap-2">
+        {icon} {label}
+      </span>
       <span className="text-sm font-semibold text-right">{value}</span>
     </div>
   );
@@ -32,6 +34,9 @@ export default function StepConfirm({ prefilledData }: { prefilledData: HealthSc
   const { watch } = useFormContext<LeadFormInput>();
   const values = watch();
 
+  // Determiniamo se mostrare i dettagli carriera (nascosti per Studenti e Disoccupati)
+  const showFullCareer = prefilledData.jobCategory !== 'Studente' && prefilledData.jobCategory !== 'Disoccupato';
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -41,55 +46,80 @@ export default function StepConfirm({ prefilledData }: { prefilledData: HealthSc
         </p>
       </div>
 
-      {/* Dati personali */}
-      <Section title="Anagrafica" icon={<User className="w-3.5 h-3.5" />}>
-        <Row label="Nome" value={`${values.firstName} ${values.lastName}`} />
-        <Row label="Email" value={values.email} />
-        <Row label="Telefono" value={values.phone} />
-        <Row label="Orario preferito" value={values.contactTime} />
-        <Row label="Stato civile" value={values.maritalStatus} />
-        <Row label="Persone a carico" value={values.dependents} />
-      </Section>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Dati personali */}
+        <Section title="Anagrafica" icon={<User className="w-3.5 h-3.5" />}>
+          <Row label="Nome" value={`${values.firstName} ${values.lastName}`} />
+          <Row label="Email" value={values.email} />
+          <Row label="Telefono" value={values.phone} />
+          <Row label="Orario preferito" value={values.contactTime} />
+        </Section>
 
-      {/* Carriera */}
-      <Section title="Carriera" icon={<Briefcase className="w-3.5 h-3.5" />}>
-        <Row label="Ruolo" value={values.jobTitle} />
-        <Row label="Anzianità" value={values.jobTenure} />
-        <Row label="Reddito lordo annuo" value={values.grossAnnualIncome ? fmt(values.grossAnnualIncome) : undefined} />
-        <Row label="Obiettivo di carriera" value={values.careerGoal} />
+        {/* Carriera */}
+        <Section title="Carriera" icon={<Briefcase className="w-3.5 h-3.5" />}>
+          {showFullCareer && (
+            <>
+              <Row label="Ruolo" value={values.jobTitle} />
+              <Row label="Anzianità" value={values.jobTenure} />
+            </>
+          )}
+          <Row label="Reddito lordo annuo" value={values.grossAnnualIncome ? fmt(values.grossAnnualIncome) : undefined} />
+          <Row label="Obiettivo" value={values.careerGoal} />
+        </Section>
+      </div>
+
+      {/* Dati dall'Health Score - AGGIORNATI CON LIQUIDITÀ E INVESTIMENTI */}
+      <Section title="Dati dal tuo Health Score" icon={<ShieldCheck className="w-3.5 h-3.5" />}>
+        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8">
+          <Row label="Età" value={`${prefilledData.age} anni`} />
+          <Row label="Comune" value={prefilledData.comune} />
+          <Row label="Categoria" value={prefilledData.jobCategory} />
+          <Row label="Situazione abitativa" value={prefilledData.housingStatus} />
+          <Row label="Reddito netto mensile" value={fmt(prefilledData.monthlyNetIncome)} />
+          <Row label="Spese fisse mensili" value={fmt(prefilledData.monthlyFixedExpenses)} />
+          
+          {/* Nuovi campi spacchettati */}
+          <Row 
+            label="Liquidità Immediata" 
+            value={fmt(prefilledData.liquidCash)} 
+            icon={<Wallet className="w-3 h-3 text-blue-500" />} 
+          />
+          <Row 
+            label="Investimenti" 
+            value={fmt(prefilledData.investments)} 
+            icon={<TrendingUp className="w-3 h-3 text-emerald-500" />} 
+          />
+          
+          <Row label="Debito al consumo" value={prefilledData.consumerDebt > 0 ? fmt(prefilledData.consumerDebt) : 'Nessuno'} />
+        </div>
       </Section>
 
       {/* Strategia */}
       <Section title="Strategia finanziaria" icon={<Target className="w-3.5 h-3.5" />}>
-        <Row label="Gestione TFR" value={values.tfrManagement} />
-        <Row label="Tolleranza al rischio" value={values.riskTolerance} />
-        <Row label="Obiettivo principale" value={values.primaryFinancialGoal} />
-        <Row
-          label="Assicurazioni attive"
-          value={values.activeInsurances?.length > 0 ? values.activeInsurances.join(', ') : 'Nessuna'}
-        />
-      </Section>
-
-      {/* Dati dall'Health Score */}
-      <Section title="Dati dal tuo Health Score" icon={<ShieldCheck className="w-3.5 h-3.5" />}>
-        <Row label="Età" value={`${prefilledData.age} anni`} />
-        <Row label="Comune" value={prefilledData.comune} />
-        <Row label="Categoria" value={prefilledData.jobCategory} />
-        <Row label="Reddito netto mensile" value={fmt(prefilledData.monthlyNetIncome)} />
-        <Row label="Spese fisse mensili" value={fmt(prefilledData.monthlyFixedExpenses)} />
-        <Row label="Risparmi totali" value={fmt(prefilledData.totalSavings)} />
-        <Row label="Debito al consumo" value={prefilledData.consumerDebt > 0 ? fmt(prefilledData.consumerDebt) : 'Nessuno'} />
-        <Row label="Situazione abitativa" value={prefilledData.housingStatus} />
+        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8">
+          <Row label="Gestione TFR" value={values.tfrManagement} />
+          <Row label="Tolleranza al rischio" value={values.riskTolerance} />
+          <Row label="Obiettivo principale" value={values.primaryFinancialGoal} />
+          <Row
+            label="Assicurazioni"
+            value={values.activeInsurances?.length > 0 ? values.activeInsurances.join(', ') : 'Nessuna'}
+          />
+        </div>
       </Section>
 
       {/* Consenso sessione */}
-      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-        <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">
-          Hai richiesto una{' '}
-          <strong>Sessione Strategica Gratuita (valore €150)</strong> con un professionista
-          verificato della nostra rete. Ti contatteremo entro 48 ore lavorative.
-        </p>
+      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-[2rem] p-6 flex items-start gap-4">
+        <div className="bg-emerald-600 rounded-full p-2 mt-0.5">
+           <CheckCircle2 className="w-5 h-5 text-white shrink-0" />
+        </div>
+        <div>
+          <p className="text-lg font-bold text-emerald-900 dark:text-emerald-100">
+            Sessione Strategica Gratuita
+          </p>
+          <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium mt-1 leading-relaxed">
+            Un consulente verificato della nostra rete analizzerà il tuo report Health Score per costruire un piano d'azione. Verrai ricontattato entro 48 ore lavorative.
+          </p>
+        </div>
       </div>
     </div>
   );

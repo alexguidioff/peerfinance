@@ -4,33 +4,38 @@ import { useState } from 'react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { healthScoreSchema, type HealthScoreInput } from '@/lib/schemas/health-score';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // <-- Aggiunto useSearchParams
 
 import Step1Demographics from './steps/Step1Demographics';
 import Step2Cashflow from './steps/Step2Cashflow';
 import Step3Wealth from './steps/Step3Wealth';
 
-// AGGIORNATO CON I NUOVI CAMPI DELLO SCHEMA ZOD
 const STEPS = [
   { id: 'step-1', fields: ['age', 'comune', 'jobCategory'] },
-  { id: 'step-2', fields: ['monthlyNetIncome', 'monthlyFixedExpenses'] },
+  { id: 'step-2', fields: ['monthlyNetIncome', 'monthlyFixedExpenses','liquidCash'] },
   { id: 'step-3', fields: ['totalSavings', 'consumerDebt', 'housingStatus'] },
 ] as const;
 
 export default function ScoreForm() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // <-- Leggiamo l'URL
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Estraiamo i parametri dall'URL (se esistono)
+  const urlAge = searchParams.get('age');
+  const urlJob = searchParams.get('jobCategory');
 
   const methods = useForm<HealthScoreInput>({
     resolver: zodResolver(healthScoreSchema) as any, 
     mode: 'onTouched',
     defaultValues: {
-      age: undefined,
+      age: urlAge ? Number(urlAge) : undefined,
       comune: '',
-      jobCategory: undefined,
+      jobCategory: urlJob ? (urlJob as any) : undefined,
       monthlyNetIncome: undefined,
       monthlyFixedExpenses: undefined,
-      totalSavings: undefined,
+      liquidCash: undefined, // NUOVO CAMPO (Step 2)
+      investments: undefined, // NUOVO CAMPO (Step 3)
       consumerDebt: undefined,
       housingStatus: undefined,
     } as any, 

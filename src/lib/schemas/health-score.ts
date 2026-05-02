@@ -9,7 +9,7 @@ export const healthScoreSchema = z.object({
   comune: z.string({ message: "Inserisci il tuo comune" })
     .min(2, "Il nome del comune è troppo corto"),
   
-  jobCategory: z.enum(['Dipendente', 'Autonomo', 'Pensionato', 'Disoccupato'], {
+  jobCategory: z.enum(['Dipendente', 'Autonomo', 'Pensionato', 'Disoccupato', 'Studente'], {
     message: "Seleziona la tua situazione lavorativa"
   }),
 
@@ -20,14 +20,16 @@ export const healthScoreSchema = z.object({
   monthlyFixedExpenses: z.coerce.number({ message: "Inserisci un valore valido" })
     .min(0, "Le spese non possono essere negative"),
   
+  liquidCash:z.coerce.number ({message: "Inserisci un valore valido"})  
+    .min(0, "La liquidità sul conto non può essere negativa"),
   // STEP 3: Wealth
-  totalSavings: z.coerce.number({ message: "Inserisci un valore valido" })
-    .min(0, "I risparmi non possono essere negativi"),
+  investments: z.coerce.number({ message: "Inserisci un valore valido" })
+    .min(0, "Gli invesitmenti non possono essere negativi"),
     
   consumerDebt: z.coerce.number({ message: "Inserisci un valore valido" })
     .min(0, "I debiti non possono essere negativi"),
   
-  housingStatus: z.enum(['Affitto', 'Proprietà con Mutuo', 'Proprietà senza Mutuo', 'Vivo con i genitori'], {
+  housingStatus: z.enum(['Affitto', 'Proprietà (con Mutuo in corso)', 'Proprietà (senza Mutuo)', 'Vivo con i genitori / in famiglia'], {
     message: "Seleziona la tua situazione abitativa"
   }),
 });

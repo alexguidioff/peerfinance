@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { leadFormSchema, type LeadFormInput } from '@/lib/schemas/lead-schema';
 import type { HealthScoreInput } from '@/lib/schemas/health-score';
-import { ArrowRight, ArrowLeft, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 import Step1Personal from './steps/Step1Personal';
 import Step2Career from './steps/Step2Career';
@@ -93,7 +93,7 @@ export default function StrategyForm({ prefilledData }: { prefilledData: HealthS
     } catch {
       // ignora errori di parsing
     }
-  }, []);
+  }, [getValues, reset]);
 
   // Salva bozza ad ogni cambio
   useEffect(() => {
@@ -145,13 +145,15 @@ export default function StrategyForm({ prefilledData }: { prefilledData: HealthS
       primary_financial_goal: data.primaryFinancialGoal,
       privacy_consent:        data.privacyConsent,
       partner_consent:        data.partnerConsent,
-      // Dati ereditati dall'Health Score
+      
+      // Dati ereditati dall'Health Score (AGGIORNATI)
       age:                    prefilledData.age,
       comune:                 prefilledData.comune,
       job_category:           prefilledData.jobCategory,
       monthly_net_income:     prefilledData.monthlyNetIncome,
       monthly_fixed_expenses: prefilledData.monthlyFixedExpenses,
-      total_savings:          prefilledData.totalSavings,
+      liquid_cash:            prefilledData.liquidCash,    // ← Nuovo campo
+      investments:            prefilledData.investments,   // ← Nuovo campo
       consumer_debt:          prefilledData.consumerDebt,
       housing_status:         prefilledData.housingStatus,
     }]);
@@ -160,7 +162,6 @@ export default function StrategyForm({ prefilledData }: { prefilledData: HealthS
 
     if (error) {
       console.error(error);
-      // Mostra errore inline invece di alert()
       setSubmitError("C'è stato un errore durante l'invio. Riprova tra qualche secondo.");
       return;
     }
@@ -208,8 +209,11 @@ export default function StrategyForm({ prefilledData }: { prefilledData: HealthS
           {/* Step content */}
           <div className={currentStep === 0 ? 'block' : 'hidden'}><Step1Personal /></div>
           <div className={currentStep === 1 ? 'block' : 'hidden'}>
-            <Step2Career estimatedGrossAnnual={estimatedGrossAnnual} />
-          </div>
+          <Step2Career 
+        estimatedGrossAnnual={estimatedGrossAnnual} 
+        jobCategory={prefilledData.jobCategory} // Usa prefilledData.jobCategory
+      />
+    </div>
           <div className={currentStep === 2 ? 'block' : 'hidden'}><Step3Strategy /></div>
           <div className={currentStep === 3 ? 'block' : 'hidden'}>
             <StepConfirm prefilledData={prefilledData} />

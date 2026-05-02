@@ -1,5 +1,7 @@
 // app/score/page.tsx
-import ScoreForm from '@/components/score/ScoreForm';
+import { Suspense } from 'react'
+import ScoreForm from '@/components/score/ScoreForm'
+
 import { ShieldCheck } from 'lucide-react';
 
 export const metadata = {
@@ -34,7 +36,9 @@ export default function ScorePage() {
         </div>
         
         {/* Il Form che abbiamo aggiornato prima */}
-        <ScoreForm />
+        <Suspense fallback={<div>Caricamento form...</div>}>
+      <ScoreForm />
+    </Suspense>
         
       </div>
     </main>

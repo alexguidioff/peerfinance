@@ -9,24 +9,40 @@ export const leadFormSchema = z.object({
   maritalStatus: z.enum(["Single", "Convivente", "Sposato/a", "Divorziato/a"]),
   dependents: z.number().min(0, "Numero non valido"),
   taxFiling: z.enum(["730 / Modello Redditi", "Nessuna dichiarazione", "Non lo so"]),
-  jobTitle: z.string().min(2, "Inserisci la tua qualifica (es. Impiegato, Sviluppatore...)"),
-  jobTenure: z.enum(["Meno di 1 anno", "1-3 anni", "3-5 anni", "Oltre 5 anni"]),
-  jobSatisfaction: z.number().min(1).max(10), 
-  grossAnnualIncome: z.number().min(0, "Inserisci la RAL stimata (Lorda)"),
+  
+  // Modificato: jobTitle rimane stringa (per Studenti sarà il corso di studi)
+  jobTitle: z.string().min(2, "Campo richiesto"),
+  
+  // MODIFICATO: jobTenure e jobSatisfaction ora sono opzionali 
+  // perché nascosti per Studenti/Disoccupati
+  jobTenure: z.enum(["Meno di 1 anno", "1-3 anni", "3-5 anni", "Oltre 5 anni"]).optional().nullable(),
+  jobSatisfaction: z.number().min(1).max(10).optional().nullable(), 
+  
+  grossAnnualIncome: z.number().min(0, "Inserisci un valore valido"),
+  
+  // AGGIORNATO: Aggiunte le nuove opzioni per Studenti e Disoccupati
   careerGoal: z.enum([
     "Aumento di stipendio",
     "Cambio azienda / ruolo",
     "Cambio radicale carriera",
     "Miglioramento Work-Life balance",
-    "Sto bene così"
+    "Sto bene così",
+    "Trovare il primo impiego",
+    "Master / Specializzazione",
+    "Lavorare all'estero",
+    "Avviare una startup",
+    "Ricollocamento professionale"
   ]),
+  
   tfrManagement: z.enum(["Lasciato in Azienda", "Fondo Pensione Negoziale", "Fondo Pensione Aperto/PIP", "Non applicabile / Autonomo", "Non lo so"]),
-  activeInsurances: z.array(z.string()), // Rimosso .optional()
+  activeInsurances: z.array(z.string()),
+  
   riskTolerance: z.enum([
     "Bassa (Voglio proteggere il capitale)",
     "Media (Accetto oscillazioni moderate)",
     "Alta (Punto alla crescita, accetto cali anche del 20%)"
   ]),
+  
   primaryFinancialGoal: z.enum([
     "Comprare casa",
     "Creare una rendita futura / Pensione",
@@ -34,10 +50,11 @@ export const leadFormSchema = z.object({
     "Gestire liquidità in eccesso",
     "Uscire dai debiti"
   ]),
+  
   privacyConsent: z.boolean().refine((val) => val === true, {
     message: "Devi accettare la Privacy Policy",
   }),
-  partnerConsent: z.boolean(), // Rimosso .default(false)
+  partnerConsent: z.boolean(),
 });
 
 export type LeadFormInput = z.infer<typeof leadFormSchema>;

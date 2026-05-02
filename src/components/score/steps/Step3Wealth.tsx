@@ -2,7 +2,7 @@
 
 import { useFormContext } from 'react-hook-form';
 import type { HealthScoreInput } from '@/lib/schemas/health-score';
-import { PiggyBank, CreditCard, Home } from 'lucide-react';
+import { TrendingUp, CreditCard, Home } from 'lucide-react';
 
 export default function Step3Wealth() {
   const { register, formState: { errors } } = useFormContext<HealthScoreInput>();
@@ -12,36 +12,36 @@ export default function Step3Wealth() {
       <div>
         <h2 className="text-3xl font-black text-foreground mb-3">Patrimonio e Casa</h2>
         <p className="text-muted-foreground text-lg">
-          Ultimo step. Ci serve per calcolare quanti mesi di autonomia finanziaria hai (Runway) e valutare la tua solidità patrimoniale.
+          Ultimo step. Ci serve per valutare la tua reale solidità patrimoniale a lungo termine e l'esposizione ai debiti.
         </p>
       </div>
 
       <div className="space-y-6">
         
-        {/* Risparmi */}
+        {/* Investimenti Finanziari */}
         <div className="relative">
-          <label htmlFor="totalSavings" className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-            <PiggyBank className="w-4 h-4 text-emerald-500" /> Risparmi e Investimenti liquidi (€)
+          <label htmlFor="investments" className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-500" /> Investimenti Finanziari (€)
           </label>
           <input
-            id="totalSavings"
+            id="investments"
             type="number"
             inputMode="numeric"
             placeholder="es. 15000"
-            {...register('totalSavings')}
+            {...register('investments', { valueAsNumber: true })}
             className={`w-full p-4 border-2 rounded-2xl text-lg font-medium bg-card focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all ${
-              errors.totalSavings ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-emerald-500'
+              errors.investments ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-emerald-500'
             }`}
           />
           <p className="mt-2 text-xs font-medium text-muted-foreground">
-            Conti correnti, conti deposito, azioni, ETF, crypto. <strong className="text-foreground">Escludi</strong> il valore della casa.
+            Azioni, ETF, Crypto, Obbligazioni. <strong className="text-foreground">Escludi</strong> il valore degli immobili e la liquidità che hai già inserito.
           </p>
-          {errors.totalSavings && (
-            <p className="mt-2 text-sm font-bold text-red-500">{errors.totalSavings.message}</p>
+          {errors.investments && (
+            <p className="mt-2 text-sm font-bold text-red-500">{errors.investments.message}</p>
           )}
         </div>
 
-        {/* Debiti */}
+        {/* Debiti al Consumo */}
         <div className="relative">
           <label htmlFor="consumerDebt" className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
             <CreditCard className="w-4 h-4 text-emerald-500" /> Debiti al consumo (€)
@@ -51,7 +51,7 @@ export default function Step3Wealth() {
             type="number"
             inputMode="numeric"
             placeholder="es. 3500"
-            {...register('consumerDebt')}
+            {...register('consumerDebt', { valueAsNumber: true })}
             className={`w-full p-4 border-2 rounded-2xl text-lg font-medium bg-card focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all ${
               errors.consumerDebt ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-emerald-500'
             }`}
@@ -78,9 +78,9 @@ export default function Step3Wealth() {
           >
             <option value="">Seleziona...</option>
             <option value="Affitto">In Affitto</option>
-            <option value="Proprietà con Mutuo">Proprietà (con Mutuo in corso)</option>
-            <option value="Proprietà senza Mutuo">Proprietà (senza Mutuo)</option>
-            <option value="Vivo con i genitori">Vivo con i genitori / in famiglia</option>
+            <option value="Proprietà (con Mutuo in corso)">Proprietà (con Mutuo in corso)</option>
+            <option value="Proprietà (senza Mutuo)">Proprietà (senza Mutuo)</option>
+            <option value="Vivo con i genitori / in famiglia">Vivo con i genitori / in famiglia</option>
           </select>
           {errors.housingStatus && (
             <p className="mt-2 text-sm font-bold text-red-500">{errors.housingStatus.message}</p>

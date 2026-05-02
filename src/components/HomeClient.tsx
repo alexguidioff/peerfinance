@@ -16,7 +16,8 @@ const JOB_OPTIONS = [
   'Lavoratore Dipendente',
   'Lavoratore Autonomo / P.IVA',
   'Pensionato',
-  'Non occupato / Studente',
+  'Non occupato',
+  'Studente',
 ];
 
 function fmt(n: number) {
@@ -34,7 +35,8 @@ export default function HomeClient({ stats }: { stats: Stats }) {
     'Lavoratore Dipendente':    'Dipendente',
     'Lavoratore Autonomo / P.IVA': 'Autonomo',
     'Pensionato':               'Pensionato',
-    'Non occupato / Studente':  'Disoccupato',
+    'Non occupato':  'Disoccupato',
+    'Studente': 'Studente',
   };
 
   const handleStart = (e: React.FormEvent) => {
