@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Menu, X, TrendingUp, MapPin, Loader2 } from "lucide-react";
+import { Search, Menu, X, MapPin, Loader2 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
-// Inizializza Supabase client-side
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL as string,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
@@ -17,14 +16,63 @@ type Suggestion = {
   sigla_provincia: string;
 };
 
-// Helper per capitalizzare correttamente i nomi composti (es. "reggio emilia" -> "Reggio Emilia")
-const formatComuneName = (name: string) => {
-  return name
+const formatComuneName = (name: string) =>
+  name
     .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+/**
+ * Logo CashflowScore
+ *
+ * Icona: pulse/heartbeat SVG custom — evoca l'health score finanziario.
+ * La linea parte piatta, sale con un picco acuto (il "battito"), ridiscende
+ * e torna piatta. Stessa forma di un ECG, applicata alla finanza.
+ *
+ * Testo: "Cashflow" in peso normale + "Score" in bold per creare
+ * una gerarchia visiva interna al nome senza spezzarlo in due parole.
+ */
+function CashflowScoreLogo({ className = "" }: { className?: string }) {
+  return (
+    <span className={`flex items-center gap-2 ${className}`}>
+      {/* Contenitore icona */}
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+        <svg
+          viewBox="0 0 32 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-auto"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/*
+            Path del battito:
+            M0,10       — parte a sinistra a metà altezza
+            L7,10       — linea piatta sinistra
+            L10,14      — piccola discesa prima del picco
+            L13,2       — picco alto (battito principale)
+            L16,18      — discesa sotto la linea
+            L19,10      — ritorno alla linea base
+            L32,10      — linea piatta destra
+          */}
+          <path
+            d="M0,10 L7,10 L10,14 L13,2 L16,18 L19,10 L32,10"
+            stroke="white"
+            strokeWidth="2.2"
+            fill="none"
+          />
+        </svg>
+      </span>
+
+      {/* Wordmark */}
+      <span className="text-xl tracking-tight text-foreground">
+        <span className="font-medium">Cashflow</span>
+        <span className="font-extrabold">Score</span>
+      </span>
+    </span>
+  );
+}
 
 export default function Navbar() {
   const router = useRouter();
@@ -33,7 +81,7 @@ export default function Navbar() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +95,6 @@ export default function Navbar() {
       setIsLoading(true);
       setShowDropdown(true);
 
-      // Ricerca ovunque nella stringa
       const { data, error } = await supabase
         .from("mef_redditi_comuni")
         .select("comune, sigla_provincia")
@@ -55,26 +102,20 @@ export default function Navbar() {
         .limit(5);
 
       if (!error && data) {
-        // Formattiamo il nome del comune prima di salvarlo nello stato
-        const formattedData = data.map(item => ({
-          ...item,
-          comune: formatComuneName(item.comune)
-        }));
-        setSuggestions(formattedData);
+        setSuggestions(
+          data.map((item) => ({ ...item, comune: formatComuneName(item.comune) }))
+        );
       }
       setIsLoading(false);
     };
 
-    const timeoutId = setTimeout(() => {
-      fetchSuggestions();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
+    const id = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(id);
   }, [searchQuery]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
     };
@@ -82,37 +123,28 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelectComune = (comuneSelezionato: string) => {
-    // Per l'URL usiamo il formato originale atteso dal sistema (minuscolo)
-    const formattedQuery = encodeURIComponent(comuneSelezionato.toLowerCase());
+  const handleSelectComune = (comune: string) => {
+    router.push(`/redditi/${encodeURIComponent(comune.toLowerCase())}`);
     setSearchQuery("");
     setShowDropdown(false);
     setIsMobileMenuOpen(false);
-    router.push(`/redditi/${formattedQuery}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (suggestions.length > 0) {
-      handleSelectComune(suggestions[0].comune);
-    }
+    if (suggestions.length > 0) handleSelectComune(suggestions[0].comune);
   };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6 md:px-10">
-        
+
         {/* LOGO */}
-        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-          <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-extrabold tracking-tight text-foreground">
-            Peerfinance
-          </span>
+        <Link href="/" className="transition-opacity hover:opacity-80">
+          <CashflowScoreLogo />
         </Link>
 
-        {/* MENU E SEARCH (DESKTOP) */}
+        {/* DESKTOP: nav links + search */}
         <div className="hidden md:flex md:items-center md:gap-8">
           <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
             <Link href="/redditi" className="transition-colors hover:text-foreground">Redditi</Link>
@@ -121,7 +153,7 @@ export default function Navbar() {
             <Link href="/score" className="transition-colors hover:text-foreground">Health Score</Link>
           </div>
 
-          {/* SEARCHBAR CON AUTOCOMPLETE */}
+          {/* Searchbar con autocomplete */}
           <div className="relative" ref={searchRef}>
             <form onSubmit={handleSubmit} className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -135,46 +167,50 @@ export default function Navbar() {
                 autoComplete="off"
               />
               {isLoading && (
-                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary animate-spin" />
+                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary" />
               )}
             </form>
 
-            {/* DROPDOWN RISULTATI DESKTOP */}
             {showDropdown && (
               <div className="absolute top-full mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
                 {suggestions.length > 0 ? (
                   <ul className="py-1">
-                    {suggestions.map((sugg) => (
-                      <li key={sugg.comune}>
+                    {suggestions.map((s) => (
+                      <li key={s.comune}>
                         <button
-                          onClick={() => handleSelectComune(sugg.comune)}
+                          onClick={() => handleSelectComune(s.comune)}
                           className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-secondary"
                         >
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium text-foreground">{sugg.comune}</span>
-                          <span className="ml-auto text-xs text-muted-foreground uppercase bg-secondary px-1.5 py-0.5 rounded-md">{sugg.sigla_provincia}</span>
+                          <span className="font-medium text-foreground">{s.comune}</span>
+                          <span className="ml-auto rounded-md bg-secondary px-1.5 py-0.5 text-xs uppercase text-muted-foreground">
+                            {s.sigla_provincia}
+                          </span>
                         </button>
                       </li>
                     ))}
                   </ul>
                 ) : !isLoading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">Nessun comune trovato</div>
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Nessun comune trovato
+                  </div>
                 ) : null}
               </div>
             )}
           </div>
         </div>
 
-        {/* HAMBURGER MENU (MOBILE) */}
-        <button 
+        {/* MOBILE: hamburger */}
+        <button
           className="md:hidden p-2 text-foreground"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Menu"
         >
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* DROPDOWN MENU MOBILE */}
+      {/* MOBILE MENU */}
       {isMobileMenuOpen && (
         <div className="border-t border-border bg-background px-6 py-4 md:hidden">
           <div className="relative mb-4">
@@ -189,36 +225,39 @@ export default function Navbar() {
                 autoComplete="off"
               />
               {isLoading && (
-                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary animate-spin" />
+                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary" />
               )}
             </form>
-            
-            {/* DROPDOWN RISULTATI MOBILE (INLINE) */}
+
             {searchQuery.length >= 2 && (
               <div className="mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-sm">
                 {suggestions.length > 0 ? (
                   <ul className="py-1">
-                    {suggestions.map((sugg) => (
-                      <li key={sugg.comune}>
+                    {suggestions.map((s) => (
+                      <li key={s.comune}>
                         <button
-                          onClick={() => handleSelectComune(sugg.comune)}
-                          className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm hover:bg-secondary border-b border-border last:border-0"
+                          onClick={() => handleSelectComune(s.comune)}
+                          className="flex w-full items-center gap-2 border-b border-border px-4 py-3 text-left text-sm last:border-0 hover:bg-secondary"
                         >
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium text-foreground">{sugg.comune}</span>
-                          <span className="ml-auto text-xs text-muted-foreground uppercase bg-secondary px-1.5 py-0.5 rounded-md">{sugg.sigla_provincia}</span>
+                          <span className="font-medium text-foreground">{s.comune}</span>
+                          <span className="ml-auto rounded-md bg-secondary px-1.5 py-0.5 text-xs uppercase text-muted-foreground">
+                            {s.sigla_provincia}
+                          </span>
                         </button>
                       </li>
                     ))}
                   </ul>
                 ) : !isLoading ? (
-                  <div className="p-3 text-center text-sm text-muted-foreground">Nessun comune trovato</div>
+                  <div className="p-3 text-center text-sm text-muted-foreground">
+                    Nessun comune trovato
+                  </div>
                 ) : null}
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-4 text-base font-medium text-muted-foreground border-t border-border pt-4">
+          <div className="flex flex-col gap-4 border-t border-border pt-4 text-base font-medium text-muted-foreground">
             <Link href="/redditi" onClick={() => setIsMobileMenuOpen(false)}>Redditi</Link>
             <Link href="/immobiliare" onClick={() => setIsMobileMenuOpen(false)}>Immobiliare</Link>
             <Link href="/demografia" onClick={() => setIsMobileMenuOpen(false)}>Demografia</Link>

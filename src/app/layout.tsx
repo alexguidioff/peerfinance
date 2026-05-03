@@ -1,10 +1,7 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import CookieBanner from '@/components/CookieBanner';
-
-// IMPORTA LA NAVBAR
-import Navbar from "@/components/Navbar"; 
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -35,15 +32,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
-        {/* INSERISCI LA NAVBAR QUI */}
-        <Navbar />
-        
-        {/* Il main conterrà il resto della pagina e si espanderà per riempire lo spazio */}
-        <div className="flex-1">
-          {children}
-          
-        </div>
-        <CookieBanner /> 
+        {/* Solo il children: questo permette ai sottomenu (es. dashboard) di riempire lo schermo in pace */}
+        {children}
       </body>
     </html>
   );

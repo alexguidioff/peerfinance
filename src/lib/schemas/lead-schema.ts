@@ -9,18 +9,24 @@ export const leadFormSchema = z.object({
   maritalStatus: z.enum(["Single", "Convivente", "Sposato/a", "Divorziato/a"]),
   dependents: z.number().min(0, "Numero non valido"),
   taxFiling: z.enum(["730 / Modello Redditi", "Nessuna dichiarazione", "Non lo so"]),
-  
-  // Modificato: jobTitle rimane stringa (per Studenti sarà il corso di studi)
+
+  // Radio HTML passa stringhe — convertiamo a boolean nella server action
+  acceptsOnline: z.enum(['true', 'false'], {
+    error: 'Seleziona una preferenza di consulenza',
+  }),
+
   jobTitle: z.string().min(2, "Campo richiesto"),
-  
-  // MODIFICATO: jobTenure e jobSatisfaction ora sono opzionali 
-  // perché nascosti per Studenti/Disoccupati
-  jobTenure: z.enum(["Meno di 1 anno", "1-3 anni", "3-5 anni", "Oltre 5 anni"]).optional().nullable(),
-  jobSatisfaction: z.number().min(1).max(10).optional().nullable(), 
-  
+
+  jobTenure: z.enum(["Meno di 1 anno", "1-3 anni", "3-5 anni", "Oltre 5 anni"])
+    .optional()
+    .nullable(),
+
+  jobSatisfaction: z.number().min(1).max(10)
+    .optional()
+    .nullable(),
+
   grossAnnualIncome: z.number().min(0, "Inserisci un valore valido"),
-  
-  // AGGIORNATO: Aggiunte le nuove opzioni per Studenti e Disoccupati
+
   careerGoal: z.enum([
     "Aumento di stipendio",
     "Cambio azienda / ruolo",
@@ -31,29 +37,37 @@ export const leadFormSchema = z.object({
     "Master / Specializzazione",
     "Lavorare all'estero",
     "Avviare una startup",
-    "Ricollocamento professionale"
+    "Ricollocamento professionale",
   ]),
-  
-  tfrManagement: z.enum(["Lasciato in Azienda", "Fondo Pensione Negoziale", "Fondo Pensione Aperto/PIP", "Non applicabile / Autonomo", "Non lo so"]),
+
+  tfrManagement: z.enum([
+    "Lasciato in Azienda",
+    "Fondo Pensione Negoziale",
+    "Fondo Pensione Aperto/PIP",
+    "Non applicabile / Autonomo",
+    "Non lo so",
+  ]),
+
   activeInsurances: z.array(z.string()),
-  
+
   riskTolerance: z.enum([
     "Bassa (Voglio proteggere il capitale)",
     "Media (Accetto oscillazioni moderate)",
-    "Alta (Punto alla crescita, accetto cali anche del 20%)"
+    "Alta (Punto alla crescita, accetto cali anche del 20%)",
   ]),
-  
+
   primaryFinancialGoal: z.enum([
     "Comprare casa",
     "Creare una rendita futura / Pensione",
     "Protezione dall'inflazione",
     "Gestire liquidità in eccesso",
-    "Uscire dai debiti"
+    "Uscire dai debiti",
   ]),
-  
+
   privacyConsent: z.boolean().refine((val) => val === true, {
     message: "Devi accettare la Privacy Policy",
   }),
+
   partnerConsent: z.boolean(),
 });
 
