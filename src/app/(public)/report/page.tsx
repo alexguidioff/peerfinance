@@ -413,6 +413,18 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
   const scoreSubtitle = getScoreSubtitle(result.score, result.flags, inputData);
   const ctaText = getCtaText(inputData, result.flags, result.metrics);
 
+  // 🌟 NUOVO: Creiamo un nuovo pacchetto che contiene i dati vecchi + i calcoli nuovi
+  // 🌟 Aggiunto encodeURIComponent per allinearsi perfettamente a chi legge i dati
+  const enrichedPayload = Buffer.from(
+    encodeURIComponent(
+      JSON.stringify({
+        ...inputData,
+        score: result.score,
+        triage: result.triage
+      })
+    )
+  ).toString('base64');
+
   return (
     <main className="min-h-screen bg-background py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/5 via-background to-background -z-10 h-full" />
@@ -507,7 +519,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
             Richiedi una <strong>Sessione Strategica Gratuita (valore €150)</strong> con un consulente verificato della nostra rete.
           </p>
           <a
-            href={`/strategy?d=${payload}`}
+            href={`/strategy?d=${enrichedPayload}`}
             className="inline-flex items-center justify-center gap-2 bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-4 px-10 rounded-2xl transition-all transform hover:-translate-y-1 shadow-lg relative z-10 mx-auto"
           >
             Prenota la Sessione Gratuita <ArrowRight className="w-5 h-5" />

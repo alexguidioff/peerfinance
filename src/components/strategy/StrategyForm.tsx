@@ -49,12 +49,12 @@ const STEPS = [
 
 export default function StrategyForm({ 
   prefilledData,
-  healthScore, // <--- Punteggio calcolato
-  triage       // <--- Risultato del nuovo motore
+  healthScore, 
+  triage       
 }: { 
   prefilledData: HealthScoreInput;
-  healthScore: number;
-  triage: LeadTriageResult;
+  healthScore?: number;        // <--- Aggiungi ?
+  triage?: LeadTriageResult;   // <--- Aggiungi ?
 }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
@@ -132,8 +132,26 @@ export default function StrategyForm({
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
+
   const onSubmit: SubmitHandler<LeadFormInput> = async (data) => {
     setIsSubmitting(true);
+
+    // 🌟 NUOVO: Recuperiamo la provincia dal database partendo dal comune
+    let finalProvince = null;
+    if (prefilledData.comune) {
+      // Usiamo .ilike() per ignorare le differenze tra maiuscole/minuscole
+      const { data: provData } = await supabase
+        .from('mef_redditi_comuni')
+        .select('sigla_provincia')
+        .ilike('comune', prefilledData.comune)
+        .limit(1)
+        .maybeSingle(); // maybeSingle evita errori se il comune non viene trovato
+      
+      if (provData) {
+        finalProvince = provData.sigla_provincia;
+      }
+    }
+
 
     const { error } = await supabase.from('leads').insert([{
       first_name:             data.firstName,
@@ -160,6 +178,7 @@ export default function StrategyForm({
       // Dati ereditati dall'Health Score (AGGIORNATI)
       age:                    prefilledData.age,
       comune:                 prefilledData.comune,
+      province:               finalProvince, // <--- AGGIUNGI QUESTA RIGA PER LA PROVINCIA
       job_category:           prefilledData.jobCategory,
       monthly_net_income:     prefilledData.monthlyNetIncome,
       monthly_fixed_expenses: prefilledData.monthlyFixedExpenses,
@@ -169,9 +188,10 @@ export default function StrategyForm({
       housing_status:         prefilledData.housingStatus,
 
       // 🎉 I NUOVI CAMPI DEL MOTORE 🎉
-      score:           healthScore,
-      lead_type:              triage.primary,
-      triage_data:            triage,
+      // 🎉 I NUOVI CAMPI DEL MOTORE 🎉
+      score:                  healthScore ?? null,
+      lead_type:              triage?.primary ?? 'generale',
+      triage_data:            triage ?? null,
     }]);
 
     setIsSubmitting(false);

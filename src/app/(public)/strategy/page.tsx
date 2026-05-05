@@ -17,23 +17,18 @@ export default async function StrategyPage({
   }
 
   let prefilledData;
-  let healthScore;
-  let triage;
-
   try {
     const decoded = JSON.parse(decodeURIComponent(Buffer.from(payload, 'base64').toString('utf-8')));
-    
-    // Validiamo i dati passati per assicurarci che non siano corrotti
+    // Zod ora fa passare tutto, inclusi score e triage!
     prefilledData = healthScoreSchema.parse(decoded);
-    
-    // Estraiamo score e triage direttamente dal payload (senza ricalcolare nulla)
-    healthScore = decoded.score;
-    triage = decoded.triage;
-    
   } catch (e) {
     console.error("Errore decodifica payload strategy:", e);
     redirect('/score');
   }
+  
+
+  
+
 
   return (
     <main className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
@@ -56,10 +51,10 @@ export default async function StrategyPage({
           Passiamo i "prefilledData", lo "score" e il "triage" recuperati dal payload.
         */}
         <StrategyForm 
-          prefilledData={prefilledData} 
-          healthScore={healthScore} 
-          triage={triage} 
-        />
+    prefilledData={prefilledData} 
+    healthScore={prefilledData.score} 
+    triage={prefilledData.triage} 
+  />
 
       </div>
     </main>
