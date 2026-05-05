@@ -17,10 +17,19 @@ export default async function StrategyPage({
   }
 
   let prefilledData;
+  let healthScore;
+  let triage;
+
   try {
     const decoded = JSON.parse(decodeURIComponent(Buffer.from(payload, 'base64').toString('utf-8')));
+    
     // Validiamo i dati passati per assicurarci che non siano corrotti
     prefilledData = healthScoreSchema.parse(decoded);
+    
+    // Estraiamo score e triage direttamente dal payload (senza ricalcolare nulla)
+    healthScore = decoded.score;
+    triage = decoded.triage;
+    
   } catch (e) {
     console.error("Errore decodifica payload strategy:", e);
     redirect('/score');
@@ -44,9 +53,13 @@ export default async function StrategyPage({
         </div>
 
         {/* Qui montiamo il Client Component del Form Multi-Step.
-          Passiamo i "prefilledData" così non gli facciamo reinserire età, lavoro e comune! 
+          Passiamo i "prefilledData", lo "score" e il "triage" recuperati dal payload.
         */}
-        <StrategyForm prefilledData={prefilledData} />
+        <StrategyForm 
+          prefilledData={prefilledData} 
+          healthScore={healthScore} 
+          triage={triage} 
+        />
 
       </div>
     </main>

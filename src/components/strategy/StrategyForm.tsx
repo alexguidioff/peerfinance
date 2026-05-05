@@ -1,13 +1,15 @@
 'use client';
 
+import { leadFormSchema, type LeadFormInput } from '@/lib/schemas/lead-schema';
+import type { HealthScoreInput } from '@/lib/schemas/health-score';
+import type { LeadTriageResult } from '@/lib/engines/health-score-engine'; // <--- AGGIUNTO
+import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { leadFormSchema, type LeadFormInput } from '@/lib/schemas/lead-schema';
-import type { HealthScoreInput } from '@/lib/schemas/health-score';
-import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 import Step1Personal from './steps/Step1Personal';
 import Step2Career from './steps/Step2Career';
@@ -45,7 +47,15 @@ const STEPS = [
   },
 ] as const;
 
-export default function StrategyForm({ prefilledData }: { prefilledData: HealthScoreInput }) {
+export default function StrategyForm({ 
+  prefilledData,
+  healthScore, // <--- Punteggio calcolato
+  triage       // <--- Risultato del nuovo motore
+}: { 
+  prefilledData: HealthScoreInput;
+  healthScore: number;
+  triage: LeadTriageResult;
+}) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,15 +157,21 @@ export default function StrategyForm({ prefilledData }: { prefilledData: HealthS
       partner_consent:        data.partnerConsent,
       
       // Dati ereditati dall'Health Score (AGGIORNATI)
+      // Dati ereditati dall'Health Score (AGGIORNATI)
       age:                    prefilledData.age,
       comune:                 prefilledData.comune,
       job_category:           prefilledData.jobCategory,
       monthly_net_income:     prefilledData.monthlyNetIncome,
       monthly_fixed_expenses: prefilledData.monthlyFixedExpenses,
-      liquid_cash:            prefilledData.liquidCash,    // ← Nuovo campo
-      investments:            prefilledData.investments,   // ← Nuovo campo
+      liquid_cash:            prefilledData.liquidCash,
+      investments:            prefilledData.investments,
       consumer_debt:          prefilledData.consumerDebt,
       housing_status:         prefilledData.housingStatus,
+
+      // 🎉 I NUOVI CAMPI DEL MOTORE 🎉
+      score:           healthScore,
+      lead_type:              triage.primary,
+      triage_data:            triage,
     }]);
 
     setIsSubmitting(false);

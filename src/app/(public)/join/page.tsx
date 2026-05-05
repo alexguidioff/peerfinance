@@ -152,6 +152,8 @@ export default function JoinPage() {
     const finalSpecializations = formData.specializations.join(', ');
 
     // Inseriamo nel database!
+    // ... (sopra c'è l'inserimento in supabase)
+
     const { error } = await supabase
       .from('join_requests')
       .insert([
@@ -174,6 +176,27 @@ export default function JoinPage() {
       console.error("Errore Supabase:", error);
       alert("Si è verificato un errore durante l'invio. Riprova tra poco.");
     } else {
+      // 🎉 INSERISCI QUESTO BLOCCO NUOVO 🎉
+      // Se il salvataggio va a buon fine, chiediamo alla nostra API di mandarci la mail!
+      try {
+        await fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            email: formData.email,
+            phone: finalPhone,
+            type: formData.type,
+            provinces: finalProvinces
+          })
+        });
+      } catch (mailError) {
+        // Ignoriamo gli errori visivi della mail, l'utente ha comunque fatto l'iscrizione
+        console.error("Errore notifica mail:", mailError);
+      }
+      
+      // Mostriamo il successo all'utente
       setIsSuccess(true);
     }
   };
@@ -283,6 +306,8 @@ export default function JoinPage() {
                     <option value="CFA" className="text-foreground bg-background">Consulente Autonomo</option>
                     <option value="Promotore" className="text-foreground bg-background">Consulente abilitato (Rete)</option>
                     <option value="Studio" className="text-foreground bg-background">Studio Associato</option>
+                    <option value="Financial Coach" className="text-foreground bg-background">Financial Coach</option>
+                    <option value="Job Coach" className="text-foreground bg-background">Job Coach / Career Coach</option>
                     <option value="Altro" className="text-foreground bg-background">Altro</option>
                   </select>
                 </div>
