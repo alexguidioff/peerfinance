@@ -23,20 +23,9 @@ const formatComuneName = (name: string) =>
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 
-/**
- * Logo CashflowScore
- *
- * Icona: pulse/heartbeat SVG custom — evoca l'health score finanziario.
- * La linea parte piatta, sale con un picco acuto (il "battito"), ridiscende
- * e torna piatta. Stessa forma di un ECG, applicata alla finanza.
- *
- * Testo: "Cashflow" in peso normale + "Score" in bold per creare
- * una gerarchia visiva interna al nome senza spezzarlo in due parole.
- */
 function CashflowScoreLogo({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center gap-2 ${className}`}>
-      {/* Contenitore icona */}
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
         <svg
           viewBox="0 0 32 20"
@@ -46,16 +35,6 @@ function CashflowScoreLogo({ className = "" }: { className?: string }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          {/*
-            Path del battito:
-            M0,10       — parte a sinistra a metà altezza
-            L7,10       — linea piatta sinistra
-            L10,14      — piccola discesa prima del picco
-            L13,2       — picco alto (battito principale)
-            L16,18      — discesa sotto la linea
-            L19,10      — ritorno alla linea base
-            L32,10      — linea piatta destra
-          */}
           <path
             d="M0,10 L7,10 L10,14 L13,2 L16,18 L19,10 L32,10"
             stroke="white"
@@ -64,8 +43,6 @@ function CashflowScoreLogo({ className = "" }: { className?: string }) {
           />
         </svg>
       </span>
-
-      {/* Wordmark */}
       <span className="text-xl tracking-tight text-foreground">
         <span className="font-medium">Cashflow</span>
         <span className="font-extrabold">Score</span>
@@ -148,6 +125,8 @@ export default function Navbar() {
         <div className="hidden md:flex md:items-center md:gap-8">
           <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
             <Link href="/redditi" className="transition-colors hover:text-foreground">Redditi</Link>
+            {/* NUOVO LINK STIPENDI QUI */}
+            <Link href="/stipendi" className="transition-colors hover:text-foreground">Stipendi</Link>
             <Link href="/immobiliare" className="transition-colors hover:text-foreground">Immobiliare</Link>
             <Link href="/demografia" className="transition-colors hover:text-foreground">Demografia</Link>
             <Link href="/score" className="transition-colors hover:text-foreground">Health Score</Link>
@@ -259,6 +238,8 @@ export default function Navbar() {
 
           <div className="flex flex-col gap-4 border-t border-border pt-4 text-base font-medium text-muted-foreground">
             <Link href="/redditi" onClick={() => setIsMobileMenuOpen(false)}>Redditi</Link>
+            {/* NUOVO LINK STIPENDI QUI PER MOBILE */}
+            <Link href="/stipendi" onClick={() => setIsMobileMenuOpen(false)}>Stipendi</Link>
             <Link href="/immobiliare" onClick={() => setIsMobileMenuOpen(false)}>Immobiliare</Link>
             <Link href="/demografia" onClick={() => setIsMobileMenuOpen(false)}>Demografia</Link>
             <Link href="/score" onClick={() => setIsMobileMenuOpen(false)}>Health Score</Link>
